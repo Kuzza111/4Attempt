@@ -82,6 +82,32 @@ class LLM:
         except Exception as e:
             return f"[LLM error]: {e}"
 
+    def call_stream(self, messages: list, temperature: float = 0.1,
+                    max_tokens: int = 2048):
+        """
+        Потоковый вызов. Генератор, отдающий кусочки текста по мере генерации.
+        Использование:
+            full = ""
+            for chunk in llm.call_stream(messages):
+                print(chunk, end="", flush=True)
+                full += chunk
+        При ошибке отдаёт один чанк "[LLM error]: ..." и завершается.
+        """
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+            )
+            for event in stream:
+                delta = event.choices[0].delta.content if event.choices else None
+                if delta:
+                    yield delta
+        except Exception as e:
+            yield f"[LLM error]: {e}"
+
     def call_raw(self, prompt: str, system: str | None = None,
                  temperature: float = 0.1, max_tokens: int = 512) -> str:
         """Простой вызов без истории."""

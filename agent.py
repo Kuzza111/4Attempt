@@ -134,8 +134,12 @@ class Agent:
         obs_counter: dict[str, int] = {}
 
         for step in range(MAX_STEPS):
-            text = self.llm.call(messages, temperature=0.1, max_tokens=2048)
-            print(f"\n[шаг {step + 1}]\n{text}\n{'─'*60}")
+            print(f"\n[шаг {step + 1}]")
+            text = ""
+            for chunk in self.llm.call_stream(messages, temperature=0.1, max_tokens=2048):
+                print(chunk, end="", flush=True)
+                text += chunk
+            print(f"\n{'─'*60}")
 
             if self.logger:
                 self.logger.agent_step(text)
