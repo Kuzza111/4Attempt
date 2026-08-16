@@ -6,6 +6,7 @@
   ollama_remote — Ollama на другом ПК (указать host)
   llama_cpp     — llama-cpp-python сервер (http://localhost:8080/v1)
   openai        — OpenAI API (требует api_key)
+  gemini        — Google Gemini API (требует api_key или GEMINI_API_KEY)
   custom        — любой OpenAI-совместимый endpoint
 
 Все бэкенды используют OpenAI-совместимый API — один клиент, разные base_url.
@@ -15,8 +16,10 @@
   llm = LLM.remote("192.168.1.10", "qwen2.5-coder:14b")
   llm = LLM.llama_cpp()
   llm = LLM.custom("http://my-server/v1", "my-model", api_key="sk-...")
+  llm = LLM.gemini("gemini-2.0-flash", api_key="AIza...")
 """
 
+import os
 from openai import OpenAI
 from dataclasses import dataclass
 
@@ -63,6 +66,23 @@ class LLM:
     def custom(cls, base_url: str, model: str, api_key: str = "none",
                timeout: int = 120) -> "LLM":
         """Любой OpenAI-совместимый endpoint."""
+        return cls(model=model, base_url=base_url, api_key=api_key, timeout=timeout)
+
+    @classmethod
+    def gemini(cls, model: str = "gemini-2.0-flash", api_key: str | None = None,
+              timeout: int = 120) -> "LLM":
+        """
+        Google Gemini через OpenAI-совместимый endpoint.
+        api_key берётся из аргумента или переменной окружения GEMINI_API_KEY.
+        Модели: gemini-2.0-flash, gemini-2.0-flash-lite, gemini-1.5-pro, ...
+        """
+        if api_key is None:
+            api_key = os.environ.get("GEMINI_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "Нужен api_key для Gemini (передай api_key= или задай GEMINI_API_KEY)"
+                )
+        base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
         return cls(model=model, base_url=base_url, api_key=api_key, timeout=timeout)
 
     # ─── методы вызова ───────────────────────────────────────────────────────

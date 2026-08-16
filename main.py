@@ -7,10 +7,11 @@ from main_loop import MainLoop
 # ─── КОНФИГ ──────────────────────────────────────────────────────────────────
 # Выбери нужный бэкенд — раскомментируй одну строку:
 
-llm = LLM.ollama("qwen2.5-coder:14b")
+# llm = LLM.ollama("qwen2.5-coder:14b")
 # llm = LLM.remote("192.168.1.10", "qwen2.5-coder:14b")   # Ollama на другом ПК
 # llm = LLM.llama_cpp("~/models/qwen.gguf")               # llama-cpp-python
 # llm = LLM.custom("http://my-server/v1", "my-model")     # любой endpoint
+llm = LLM.gemini("gemini-2.5-flash", api_key="AQ.Ab8RN6JzeGb7jvH1GqCKXGMOfwRCpMK4v1NcWUdKuyzfDX7s6g")
 
 HOME = os.path.expanduser("~")
 
