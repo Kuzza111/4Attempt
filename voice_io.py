@@ -154,23 +154,51 @@ def _get_silero_model():
 
 
 def speak(text: str) -> None:
-    """Озвучивает текст через Silero (синхронно, блокирует до конца фразы)."""
+    """Озвучивает текст через Silero, автоматически разбивая длинный текст на части."""
     text = _clean(text)
     text = _normalize_for_speech(text)
     if not text:
         return
 
-    speaker = os.environ.get("SILERO_SPEAKER", "xenia")
+    speaker = os.environ.get("SILERO_SPEAKER", "baya") # не менять спикера
     sample_rate = 48000
 
     try:
         model = _get_silero_model()
-        audio = model.apply_tts(text=text, speaker=speaker, sample_rate=sample_rate)
+        
+        # Нарезаем текст на предложения с помощью регулярного выражения
+        # Разделители: . ! ? (за которыми следует пробел или конец строки)
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+                
+            # Дополнительная проверка на случай, если одно предложение всё ещё длиннее 800 символов
+            if len(sentence) > 800:
+                # Если предложение гигантское, бьем его просто по пробелам
+                words = sentence.split(' ')
+                chunks = []
+                current_chunk = []
+                for word in words:
+                    current_chunk.append(word)
+                    if len(' '.join(current_chunk)) > 500:
+                        chunks.append(' '.join(current_chunk))
+                        current_chunk = []
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+            else:
+                chunks = [sentence]
+
+            # Озвучиваем каждую полученную часть
+            for chunk in chunks:
+                audio = model.apply_tts(text=chunk, speaker=speaker, sample_rate=sample_rate)
+                _play_audio(audio.numpy(), sample_rate)
+
     except Exception as e:
         print(f"[TTS ошибка]: {e}")
         return
-
-    _play_audio(audio.numpy(), sample_rate)
 
 
 def _play_audio(audio, sample_rate: int) -> None:
